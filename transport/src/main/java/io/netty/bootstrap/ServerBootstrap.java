@@ -80,10 +80,12 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
      * {@link Channel}'s.
      */
     public ServerBootstrap group(EventLoopGroup parentGroup, EventLoopGroup childGroup) {
+        //初始化父类
         super.group(parentGroup);
         if (this.childGroup != null) {
             throw new IllegalStateException("childGroup set already");
         }
+        //初始化childGroup
         this.childGroup = ObjectUtil.checkNotNull(childGroup, "childGroup");
         return this;
     }
@@ -123,37 +125,51 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
      * Set the {@link ChannelHandler} which is used to serve the request for the {@link Channel}'s.
      */
     public ServerBootstrap childHandler(ChannelHandler childHandler) {
+        //判空并初始化 childHandler 对象
         this.childHandler = ObjectUtil.checkNotNull(childHandler, "childHandler");
         return this;
     }
 
     @Override
     void init(Channel channel) {
+        // 设置通道选项与属性
         setChannelOptions(channel, newOptionsArray(), logger);
         setAttributes(channel, attrs0().entrySet().toArray(EMPTY_ATTRIBUTE_ARRAY));
 
+        // 获取到通道流水线对象
         ChannelPipeline p = channel.pipeline();
 
+        //获取到子事件循环器组
         final EventLoopGroup currentChildGroup = childGroup;
+        //获取到子通道处理器对象
         final ChannelHandler currentChildHandler = childHandler;
         final Entry<ChannelOption<?>, Object>[] currentChildOptions;
+        //获取子通道选项锁
         synchronized (childOptions) {
+            //获取到当前子通道的选项对象
             currentChildOptions = childOptions.entrySet().toArray(EMPTY_OPTION_ARRAY);
         }
         final Entry<AttributeKey<?>, Object>[] currentChildAttrs = childAttrs.entrySet().toArray(EMPTY_ATTRIBUTE_ARRAY);
 
         p.addLast(new ChannelInitializer<Channel>() {
+            //初始化通道
             @Override
             public void initChannel(final Channel ch) {
+                //获取到通道流水线对象
                 final ChannelPipeline pipeline = ch.pipeline();
+                //获取到通道处理器
                 ChannelHandler handler = config.handler();
+                //处理器不为空
                 if (handler != null) {
+                    //将处理器添加到流水线中
                     pipeline.addLast(handler);
                 }
 
+                //获取到通道的事件循环组，让其执行Runnable线程执行体
                 ch.eventLoop().execute(new Runnable() {
                     @Override
                     public void run() {
+                        //添加ServerBootstrapAcceptor对象到流水线中
                         pipeline.addLast(new ServerBootstrapAcceptor(
                                 ch, currentChildGroup, currentChildHandler, currentChildOptions, currentChildAttrs));
                     }

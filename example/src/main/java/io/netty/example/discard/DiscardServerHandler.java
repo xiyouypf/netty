@@ -23,15 +23,18 @@ import io.netty.channel.SimpleChannelInboundHandler;
  */
 public class DiscardServerHandler extends SimpleChannelInboundHandler<Object> {
 
+    //通道读取到数据时，回调此方法
     @Override
     public void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
         // discard
     }
 
+    //发生异常时，回调此方法
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        // Close the connection when an exception is raised.
+        //打印错误日志到控制台
         cause.printStackTrace();
+        //关闭连接
         ctx.close();
     }
 }

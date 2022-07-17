@@ -51,14 +51,12 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
 
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(NioServerSocketChannel.class);
 
+    /**
+     * 创建ServerSocketChannel对象
+     */
     private static ServerSocketChannel newSocket(SelectorProvider provider) {
         try {
-            /**
-             *  Use the {@link SelectorProvider} to open {@link SocketChannel} and so remove condition in
-             *  {@link SelectorProvider#provider()} which is called by each ServerSocketChannel.open() otherwise.
-             *
-             *  See <a href="https://github.com/netty/netty/issues/2308">#2308</a>.
-             */
+            // 通过选择器提供器对象 打开一个服务端套接字通道对象，ServerSocketChannel
             return provider.openServerSocketChannel();
         } catch (IOException e) {
             throw new ChannelException(
@@ -68,10 +66,8 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
 
     private final ServerSocketChannelConfig config;
 
-    /**
-     * Create a new instance
-     */
     public NioServerSocketChannel() {
+        //使用newSocket创建实例，使用DEFAULT_SELECTOR_PROVIDER默认选择器提供器对象
         this(newSocket(DEFAULT_SELECTOR_PROVIDER));
     }
 
@@ -83,9 +79,10 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
     }
 
     /**
-     * Create a new instance using the given {@link ServerSocketChannel}.
+     * 创建NioServerSocketChannelConfig配置对象，并初始化父类
      */
     public NioServerSocketChannel(ServerSocketChannel channel) {
+        //设置注册时的感兴趣事件集为OP_ACCEPT
         super(null, channel, SelectionKey.OP_ACCEPT);
         config = new NioServerSocketChannelConfig(this, javaChannel().socket());
     }

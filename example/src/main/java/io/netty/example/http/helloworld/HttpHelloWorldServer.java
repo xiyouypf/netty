@@ -33,7 +33,9 @@ import io.netty.handler.ssl.util.SelfSignedCertificate;
  */
 public final class HttpHelloWorldServer {
 
+    //通过系统变量检测是否开启了SSL
     static final boolean SSL = System.getProperty("ssl") != null;
+    //通过系统变量获取端口号
     static final int PORT = Integer.parseInt(System.getProperty("port", SSL? "8443" : "8080"));
 
     public static void main(String[] args) throws Exception {
@@ -46,24 +48,34 @@ public final class HttpHelloWorldServer {
             sslCtx = null;
         }
 
-        // Configure the server.
+        //创建主（boss）事件循环组
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
+        //创建从（worker）事件循环组
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
+            //创建服务端启动器
             ServerBootstrap b = new ServerBootstrap();
+            //设置Server通道的SO_BACKLOG为1024
             b.option(ChannelOption.SO_BACKLOG, 1024);
+            //将上面两个事件循环组对象放入server启动器中
             b.group(bossGroup, workerGroup)
+             //设置服务端的ServerSocketChannel为NIOServerSocketChannel
              .channel(NioServerSocketChannel.class)
+             //设置处理ServerSocketChannel接收到的客户端事件处理器，也即打日志处理器
              .handler(new LoggingHandler(LogLevel.INFO))
+             //设置接收到socket客户端请求的处理器
              .childHandler(new HttpHelloWorldServerInitializer(sslCtx));
 
+            //绑定端口，并开始接收传入的连接
             Channel ch = b.bind(PORT).sync().channel();
 
             System.err.println("Open your web browser and navigate to " +
                     (SSL? "https" : "http") + "://127.0.0.1:" + PORT + '/');
 
+            //等待直到服务器套接字关闭
             ch.closeFuture().sync();
         } finally {
+            //优雅的关闭主/从事件循环组
             bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();
         }

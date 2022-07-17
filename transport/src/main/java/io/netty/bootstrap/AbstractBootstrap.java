@@ -87,10 +87,12 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
      * {@link Channel}
      */
     public B group(EventLoopGroup group) {
+        //判空
         ObjectUtil.checkNotNull(group, "group");
         if (this.group != null) {
             throw new IllegalStateException("group set already");
         }
+        //初始化group
         this.group = group;
         return self();
     }
@@ -106,6 +108,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
      * {@link Channel} implementation has no no-args constructor.
      */
     public B channel(Class<? extends C> channelClass) {
+        //直接调用channelFactory方法，创建了一个ReflectiveChannelFactory对象
         return channelFactory(new ReflectiveChannelFactory<C>(
                 ObjectUtil.checkNotNull(channelClass, "channelClass")
         ));
@@ -121,6 +124,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
             throw new IllegalStateException("channelFactory set already");
         }
 
+        //保存Channel工厂对象
         this.channelFactory = channelFactory;
         return self();
     }
@@ -171,11 +175,16 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
      * created. Use a value of {@code null} to remove a previous set {@link ChannelOption}.
      */
     public <T> B option(ChannelOption<T> option, T value) {
+        //判空
         ObjectUtil.checkNotNull(option, "option");
+        //上锁
         synchronized (options) {
+            //如果设置的值为空
             if (value == null) {
+                //移除该option
                 options.remove(option);
             } else {
+                //将该option和值放到options map中
                 options.put(option, value);
             }
         }
@@ -243,6 +252,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
      * Create a new {@link Channel} and bind it.
      */
     public ChannelFuture bind(int inetPort) {
+        //直接调用bind方法，创建了一个InetSocketAddress对象
         return bind(new InetSocketAddress(inetPort));
     }
 
@@ -264,38 +274,48 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
      * Create a new {@link Channel} and bind it.
      */
     public ChannelFuture bind(SocketAddress localAddress) {
+        //验证变量信息
         validate();
         return doBind(ObjectUtil.checkNotNull(localAddress, "localAddress"));
     }
 
     private ChannelFuture doBind(final SocketAddress localAddress) {
+        //初始化并注册
         final ChannelFuture regFuture = initAndRegister();
+        //获取到注册的通道
         final Channel channel = regFuture.channel();
+        //如果发生了异常，则返回
         if (regFuture.cause() != null) {
             return regFuture;
         }
 
+        //初始化并注册完成
         if (regFuture.isDone()) {
             // At this point we know that the registration was complete and successful.
             ChannelPromise promise = channel.newPromise();
+            //做进一步绑定操作
             doBind0(regFuture, channel, localAddress, promise);
             return promise;
         } else {
             // Registration future is almost always fulfilled already, but just in case it's not.
             final PendingRegistrationPromise promise = new PendingRegistrationPromise(channel);
+            //添加一个ChannelFuture监听器，也即Promise模式
             regFuture.addListener(new ChannelFutureListener() {
                 @Override
                 public void operationComplete(ChannelFuture future) throws Exception {
+                    //获取到异常对象
                     Throwable cause = future.cause();
+                    //异常对象不为空
                     if (cause != null) {
-                        // Registration on the EventLoop failed so fail the ChannelPromise directly to not cause an
-                        // IllegalStateException once we try to access the EventLoop of the Channel.
+                        //在EventLoop上注册失败，所以ChannelPromise在尝试访问该通道的EventLoop时直接失败，从而不会导致IIIlgalStateException.
+                        //设置promise异常对象
                         promise.setFailure(cause);
                     } else {
-                        // Registration was successful, so set the correct executor to use.
+                        //注册成功，所以要设置正确的执行器
                         // See https://github.com/netty/netty/issues/2586
                         promise.registered();
 
+                        //做进一步的绑定操作
                         doBind0(regFuture, channel, localAddress, promise);
                     }
                 }
@@ -307,7 +327,9 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
     final ChannelFuture initAndRegister() {
         Channel channel = null;
         try {
+            //创建一个新的通道对象
             channel = channelFactory.newChannel();
+            //初始化通道
             init(channel);
         } catch (Throwable t) {
             if (channel != null) {
@@ -320,24 +342,28 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
             return new DefaultChannelPromise(new FailedChannel(), GlobalEventExecutor.INSTANCE).setFailure(t);
         }
 
+        //注册通道
         ChannelFuture regFuture = config().group().register(channel);
+        //发生异常
         if (regFuture.cause() != null) {
             if (channel.isRegistered()) {
+                //关闭通道
                 channel.close();
             } else {
+                //强制关闭
                 channel.unsafe().closeForcibly();
             }
         }
-
-        // If we are here and the promise is not failed, it's one of the following cases:
-        // 1) If we attempted registration from the event loop, the registration has been completed at this point.
-        //    i.e. It's safe to attempt bind() or connect() now because the channel has been registered.
-        // 2) If we attempted registration from the other thread, the registration request has been successfully
-        //    added to the event loop's task queue for later execution.
-        //    i.e. It's safe to attempt bind() or connect() now:
-        //         because bind() or connect() will be executed *after* the scheduled registration task is executed
-        //         because register(), bind(), and connect() are all bound to the same thread.
-
+        /**
+         *  如果我们在这里，承诺没有失败，这是下列情况之一:
+         *  1)如果我们试图从事件循环中注册，那么注册已经在此时完成。
+         * 例如，现在尝试bind()或connect()是安全的，因为通道已经注册了。
+         *  2)如果我们试图从其他线程注册，注册请求已经成功
+         * 添加到事件循环的任务队列中，以便稍后执行。
+         * 现在尝试bind()或connect()是安全的:
+         * 因为bind()或connect()将在*计划注册任务执行后执行
+         * 因为register()， bind()和connect()都绑定到同一个线程。
+         */
         return regFuture;
     }
 
@@ -365,6 +391,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
      * the {@link ChannelHandler} to use for serving the requests.
      */
     public B handler(ChannelHandler handler) {
+        //判空并初始化 handler 对象
         this.handler = ObjectUtil.checkNotNull(handler, "handler");
         return self();
     }

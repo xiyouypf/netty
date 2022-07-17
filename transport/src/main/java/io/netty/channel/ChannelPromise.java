@@ -20,7 +20,8 @@ import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.Promise;
 
 /**
- * Special {@link ChannelFuture} which is writable.
+ * 特殊可写的{@link ChannelFuture}
+ * Promise继承自Future接口，提供了监听器的支持，当操作完成时，将会回调监听器
  */
 public interface ChannelPromise extends ChannelFuture, Promise<Void> {
 

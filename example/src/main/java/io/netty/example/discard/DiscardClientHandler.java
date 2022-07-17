@@ -26,52 +26,71 @@ import io.netty.channel.SimpleChannelInboundHandler;
  */
 public class DiscardClientHandler extends SimpleChannelInboundHandler<Object> {
 
+    //内容字节缓冲区
     private ByteBuf content;
     private ChannelHandlerContext ctx;
 
+    //当通道激活时，回调此方法
     @Override
     public void channelActive(ChannelHandlerContext ctx) {
         this.ctx = ctx;
 
-        // Initialize the message.
-        content = ctx.alloc().directBuffer(DiscardClient.SIZE).writeZero(DiscardClient.SIZE);
+        //初始化消息
+        content = ctx
+                //分配缓冲区
+                .alloc()
+                //设置直接内存缓冲区大小为DiscardClient.SIZE，256
+                .directBuffer(DiscardClient.SIZE)
+                //向缓冲区中国呢写入Obyte，大小为DiscardClient.SIZE，256
+                .writeZero(DiscardClient.SIZE);
 
-        // Send the initial messages.
+        //发送初始化后的数据
         generateTraffic();
     }
 
+    //当通道变为不活跃时，回调此方法
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
+        //释放分配的缓冲区对象
         content.release();
     }
 
+    //当读取到服务端发送的数据时，回调此方法
     @Override
     public void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
         // Server is supposed to send nothing, but if it sends something, discard it.
     }
 
+    //当发生了异常，回调此方法
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        // Close the connection when an exception is raised.
+        //打印异常信息
         cause.printStackTrace();
+        //关闭连接
         ctx.close();
     }
 
+    //计时器
     long counter;
 
+    //生成传输数据
     private void generateTraffic() {
-        // Flush the outbound buffer to the socket.
-        // Once flushed, generate the same amount of traffic again.
-        ctx.writeAndFlush(content.retainedDuplicate()).addListener(trafficGenerator);
+        //将数据写入socket中并且刷出到服务器
+        ctx.writeAndFlush(content.retainedDuplicate())
+                //添加监听器对象
+                .addListener(trafficGenerator);
     }
 
+    //监听器对象，用于监听ChannelHandlerCntext上下文操作
     private final ChannelFutureListener trafficGenerator = new ChannelFutureListener() {
         @Override
         public void operationComplete(ChannelFuture future) {
             if (future.isSuccess()) {
                 generateTraffic();
             } else {
+                //异常完成，打印异常信息
                 future.cause().printStackTrace();
+                //关闭通道
                 future.channel().close();
             }
         }

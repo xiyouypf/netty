@@ -17,74 +17,80 @@ package io.netty.util.concurrent;
 
 /**
  * Special {@link Future} which is writable.
+ * 继承自Future接口
  */
 public interface Promise<V> extends Future<V> {
 
     /**
-     * Marks this future as a success and notifies all
-     * listeners.
-     *
-     * If it is success or failed already it will throw an {@link IllegalStateException}.
+     * 将此Future标记为成功，并通知所有监听器
      */
     Promise<V> setSuccess(V result);
 
     /**
-     * Marks this future as a success and notifies all
-     * listeners.
-     *
-     * @return {@code true} if and only if successfully marked this future as
-     *         a success. Otherwise {@code false} because this future is
-     *         already marked as either a success or a failure.
+     * 将此Future标记为成功，并通知所有监听器，返回是否成功
      */
     boolean trySuccess(V result);
 
     /**
-     * Marks this future as a failure and notifies all
-     * listeners.
-     *
-     * If it is success or failed already it will throw an {@link IllegalStateException}.
+     * 将此Future标记为失败，并通知所有监听器
      */
     Promise<V> setFailure(Throwable cause);
 
     /**
-     * Marks this future as a failure and notifies all
-     * listeners.
-     *
-     * @return {@code true} if and only if successfully marked this future as
-     *         a failure. Otherwise {@code false} because this future is
-     *         already marked as either a success or a failure.
+     * 将此Future标记为失败，并通知所有监听器，返回是否成功
      */
     boolean tryFailure(Throwable cause);
 
     /**
-     * Make this future impossible to cancel.
-     *
-     * @return {@code true} if and only if successfully marked this future as uncancellable or it is already done
-     *         without being cancelled.  {@code false} if this future has been cancelled already.
+     * 将此Future标记为可能被取消
      */
     boolean setUncancellable();
 
+    /**
+     * 添加一个监听器
+     */
     @Override
     Promise<V> addListener(GenericFutureListener<? extends Future<? super V>> listener);
 
+    /**
+     * 添加一组监听器
+     */
     @Override
     Promise<V> addListeners(GenericFutureListener<? extends Future<? super V>>... listeners);
 
+    /**
+     * 移除一个监听器
+     */
     @Override
     Promise<V> removeListener(GenericFutureListener<? extends Future<? super V>> listener);
 
+    /**
+     * 移除一组监听器
+     */
     @Override
     Promise<V> removeListeners(GenericFutureListener<? extends Future<? super V>>... listeners);
 
+    /**
+     * 等待完成
+     */
     @Override
     Promise<V> await() throws InterruptedException;
 
+    /**
+     * 不可中断等待完成
+     */
     @Override
     Promise<V> awaitUninterruptibly();
 
+    /**
+     * 异步转同步等待
+     */
     @Override
     Promise<V> sync() throws InterruptedException;
 
+    /**
+     * 异步转同步等待，不可中断返回
+     */
     @Override
     Promise<V> syncUninterruptibly();
 }

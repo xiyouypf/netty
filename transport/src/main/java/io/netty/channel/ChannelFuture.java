@@ -162,6 +162,11 @@ import java.util.concurrent.TimeUnit;
  * }
  * </pre>
  */
+
+/**
+ * 代表了一个异步@{@link Channel}I/O操作的结果。
+ * Netty中所有的I/O操作都是异步的。
+ */
 public interface ChannelFuture extends Future<Void> {
 
     /**

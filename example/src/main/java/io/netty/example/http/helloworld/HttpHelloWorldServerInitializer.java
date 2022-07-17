@@ -32,12 +32,17 @@ public class HttpHelloWorldServerInitializer extends ChannelInitializer<SocketCh
 
     @Override
     public void initChannel(SocketChannel ch) {
+        //获取到与channel绑定的流水线对象
         ChannelPipeline p = ch.pipeline();
         if (sslCtx != null) {
+            //设置SSL上下文
             p.addLast(sslCtx.newHandler(ch.alloc()));
         }
+        //将编码器对象放入流水线中
         p.addLast(new HttpServerCodec());
+        //将异常处理对象放入流水线只能够
         p.addLast(new HttpServerExpectContinueHandler());
+        //将自定义处理器对象放入流水线中
         p.addLast(new HttpHelloWorldServerHandler());
     }
 }
