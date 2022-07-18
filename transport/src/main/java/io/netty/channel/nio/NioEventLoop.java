@@ -132,13 +132,36 @@ public final class NioEventLoop extends SingleThreadEventLoop {
     private int cancelledKeys;
     private boolean needsToSelectAgain;
 
-    NioEventLoop(NioEventLoopGroup parent, Executor executor, SelectorProvider selectorProvider,
-                 SelectStrategy strategy, RejectedExecutionHandler rejectedExecutionHandler,
+    /**
+     * 参数一：NioEventLoopGroup
+     * 参数二：executor,ThreadPerTaskExecutor
+     * 参数三：selectorProvider，选择器提供器，通过这个可以获取到JDK层面的selector实例
+     * 参数四：选择器工作策略，DefaultSelectStrategy
+     * 参数五：线程池拒绝策略
+     * 参数六：queueFactory，这里正常路经是null
+     */
+    NioEventLoop(NioEventLoopGroup parent,
+                 Executor executor,
+                 SelectorProvider selectorProvider,
+                 SelectStrategy strategy,
+                 RejectedExecutionHandler rejectedExecutionHandler,
                  EventLoopTaskQueueFactory queueFactory) {
-        super(parent, executor, false, newTaskQueue(queueFactory), newTaskQueue(queueFactory),
+        //参数一：NioEventLoopGroup
+        //参数二：executor,ThreadPerTaskExecutor，来源是 group 内创建的
+        //参数三：addTaskWakesUp
+        //参数四：newTaskQueue(queueFactory)最终返回了一个Queue实例，最大长度为Integer的最大长度
+        //参数五：tailTaskQueue，大部分情况用不到。。。
+        //参数六：线程池拒绝策略
+        super(parent,
+                executor,
+                false,
+                newTaskQueue(queueFactory),
+                newTaskQueue(queueFactory),
                 rejectedExecutionHandler);
         this.provider = ObjectUtil.checkNotNull(selectorProvider, "selectorProvider");
         this.selectStrategy = ObjectUtil.checkNotNull(strategy, "selectStrategy");
+
+        //下面三行代码，创建出来了 selector 实例，也就是每个NioEventLoop都持有一个 selector 实例
         final SelectorTuple selectorTuple = openSelector();
         this.selector = selectorTuple.selector;
         this.unwrappedSelector = selectorTuple.unwrappedSelector;
@@ -167,6 +190,9 @@ public final class NioEventLoop extends SingleThreadEventLoop {
         }
     }
 
+    /**
+     * 未包装的Selector
+     */
     private SelectorTuple openSelector() {
         final Selector unwrappedSelector;
         try {

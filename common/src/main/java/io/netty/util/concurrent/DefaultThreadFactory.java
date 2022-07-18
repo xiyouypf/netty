@@ -24,19 +24,27 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * A {@link ThreadFactory} implementation with a simple naming rule.
+ * 默认线程工厂
  */
 public class DefaultThreadFactory implements ThreadFactory {
 
+    //每个DefaultThreadFactory实例，都有自己的poolId
     private static final AtomicInteger poolId = new AtomicInteger();
 
+    //每个DefaultThreadFactory实例，内部生成的每一个线程，都有它自己的线程ID
     private final AtomicInteger nextId = new AtomicInteger();
+    //线程名称前缀
     private final String prefix;
+    //是否守护线程
     private final boolean daemon;
+    //线程优先级，默认为5
     private final int priority;
     protected final ThreadGroup threadGroup;
 
     public DefaultThreadFactory(Class<?> poolType) {
+        //参数一：NioEventLoppGroup class
+        //参数二：是否守护线程，这里非守护线程
+        //参数三：线程优先级，这里是5
         this(poolType, false, Thread.NORM_PRIORITY);
     }
 
@@ -67,6 +75,7 @@ public class DefaultThreadFactory implements ThreadFactory {
     public static String toPoolName(Class<?> poolType) {
         ObjectUtil.checkNotNull(poolType, "poolType");
 
+        //获取一个不包含包名的classname
         String poolName = StringUtil.simpleClassName(poolType);
         switch (poolName.length()) {
             case 0:
@@ -74,7 +83,9 @@ public class DefaultThreadFactory implements ThreadFactory {
             case 1:
                 return poolName.toLowerCase(Locale.US);
             default:
+                //第一个字母大写 并且 第二个字母小写
                 if (Character.isUpperCase(poolName.charAt(0)) && Character.isLowerCase(poolName.charAt(1))) {
+                    //第一个字母变小写，并且返回
                     return Character.toLowerCase(poolName.charAt(0)) + poolName.substring(1);
                 } else {
                     return poolName;
@@ -82,7 +93,10 @@ public class DefaultThreadFactory implements ThreadFactory {
         }
     }
 
-    public DefaultThreadFactory(String poolName, boolean daemon, int priority, ThreadGroup threadGroup) {
+    public DefaultThreadFactory(String poolName,
+                                boolean daemon,
+                                int priority,
+                                ThreadGroup threadGroup) {
         ObjectUtil.checkNotNull(poolName, "poolName");
 
         if (priority < Thread.MIN_PRIORITY || priority > Thread.MAX_PRIORITY) {
@@ -97,7 +111,10 @@ public class DefaultThreadFactory implements ThreadFactory {
     }
 
     public DefaultThreadFactory(String poolName, boolean daemon, int priority) {
-        this(poolName, daemon, priority, System.getSecurityManager() == null ?
+        this(poolName,
+                daemon,
+                priority,
+                System.getSecurityManager() == null ?
                 Thread.currentThread().getThreadGroup() : System.getSecurityManager().getThreadGroup());
     }
 
@@ -118,7 +135,7 @@ public class DefaultThreadFactory implements ThreadFactory {
         return t;
     }
 
-    protected Thread newThread(Runnable r, String name) {
-        return new FastThreadLocalThread(threadGroup, r, name);
+    protected Thread newThread(Runnable r, String threadName) {
+        return new FastThreadLocalThread(threadGroup, r, threadName);
     }
 }
