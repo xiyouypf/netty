@@ -103,9 +103,8 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
     }
 
     /**
-     * The {@link Class} which is used to create {@link Channel} instances from.
-     * You either use this or {@link #channelFactory(io.netty.channel.ChannelFactory)} if your
-     * {@link Channel} implementation has no no-args constructor.
+     * 设置Channel类型
+     * @param channelClass
      */
     public B channel(Class<? extends C> channelClass) {
         //直接调用channelFactory方法，创建了一个ReflectiveChannelFactory对象
@@ -171,8 +170,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
     }
 
     /**
-     * Allow to specify a {@link ChannelOption} which is used for the {@link Channel} instances once they got
-     * created. Use a value of {@code null} to remove a previous set {@link ChannelOption}.
+     * 配置选项信息
      */
     public <T> B option(ChannelOption<T> option, T value) {
         //判空

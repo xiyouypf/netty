@@ -48,8 +48,9 @@ public final class EchoServer {
             sslCtx = null;
         }
 
-        // Configure the server.
+        // bossGroup 是ServerChannel在使用
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
+        // workerGroup 是基于当前Server产生的 客户端channel在使用
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         final EchoServerHandler serverHandler = new EchoServerHandler();
         try {
