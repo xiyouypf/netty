@@ -168,6 +168,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
                 }
 
                 //获取到通道的事件循环组，让其执行Runnable线程执行体
+                //提交任务2
                 ch.eventLoop().execute(new Runnable() {
                     @Override
                     public void run() {

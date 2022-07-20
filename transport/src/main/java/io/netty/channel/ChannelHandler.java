@@ -175,16 +175,19 @@ import java.lang.annotation.Target;
  * what fundamental differences they have, how they flow in a  pipeline,  and how to handle
  * the operation in your application.
  */
+
+/**
+ * 操作pipeline
+ */
 public interface ChannelHandler {
 
     /**
-     * Gets called after the {@link ChannelHandler} was added to the actual context and it's ready to handle events.
+     * handler被添加到pipeline时，回调此方法，由channel的EventLoop线程来执行
      */
     void handlerAdded(ChannelHandlerContext ctx) throws Exception;
 
     /**
-     * Gets called after the {@link ChannelHandler} was removed from the actual context and it doesn't handle events
-     * anymore.
+     * handler从pipeline中移除时，回调此方法，由channel的EventLoop线程来执行
      */
     void handlerRemoved(ChannelHandlerContext ctx) throws Exception;
 

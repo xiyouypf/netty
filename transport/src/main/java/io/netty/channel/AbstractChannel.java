@@ -498,6 +498,10 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
             }
         }
 
+        /**
+         * 这个方法一定是当前channel关联的EventLoop线程执行
+         * promise表示这册的结果，外部可以向他注册监听者，来完成注册后的逻辑
+         */
         private void register0(ChannelPromise promise) {
             try {
                 // check if the channel is still open as it could be closed in the mean time when the register
@@ -506,18 +510,22 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                     return;
                 }
                 boolean firstRegistration = neverRegistered;
+                //注册
                 doRegister();
                 neverRegistered = false;
+                //表示当前channel已经注册到了多路复用器
                 registered = true;
 
-                // Ensure we call handlerAdded(...) before we actually notify the promise. This is needed as the
-                // user may already fire events through the pipeline in the ChannelFutureListener.
+                //执行拆包动作
+                //会向当前EventLoop线程队列提交任务2
                 pipeline.invokeHandlerAddedIfNeeded();
 
+                //将promise设置为成功
+                //会向当前EventLoop线程队列提交任务3
                 safeSetSuccess(promise);
+                //向当前channel的pipeline发起注册完成事件，关注的Handler可以做一些事情
                 pipeline.fireChannelRegistered();
-                // Only fire a channelActive if the channel has never been registered. This prevents firing
-                // multiple channel actives if the channel is deregistered and re-registered.
+                //绑定操作一定是当前EventLoop线程去做的，在这一步，绑定一定是没有完成的
                 if (isActive()) {
                     if (firstRegistration) {
                         pipeline.fireChannelActive();
@@ -537,6 +545,11 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
             }
         }
 
+        /**
+         * 当前EventLoop线程完成绑定操作
+         * @param localAddress
+         * @param promise
+         */
         @Override
         public final void bind(final SocketAddress localAddress, final ChannelPromise promise) {
             assertEventLoop();
@@ -558,8 +571,10 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                         "address (" + localAddress + ") anyway as requested.");
             }
 
+            //在这一步，还未完成绑定，所以是false
             boolean wasActive = isActive();
             try {
+                //获取到JDK层面的ServerSocketChannel，并且使用它完成真正的绑定工作
                 doBind(localAddress);
             } catch (Throwable t) {
                 safeSetFailure(promise, t);
@@ -567,15 +582,24 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 return;
             }
 
+            //条件一：!wasActive ==》true
+            //条件二：因为上面已经完成绑定，所以这里也是true
             if (!wasActive && isActive()) {
+                //向EventLoop工作队列中提交任务，任务4
                 invokeLater(new Runnable() {
                     @Override
                     public void run() {
+                        //fireChannelActive()是一个in类型的事件，从HeadContext开始传播
+                        //headContext 会响应 active 事件
+                        //再次向当前channel的pipeline发起read事件
+                        //read事件，就会修改channel在selector上注册的感兴趣的事件，为accept
                         pipeline.fireChannelActive();
                     }
                 });
             }
 
+            // promise表示的是 绑定结果
+            //启动线程，在该promise上执行的wait操作，所以，这一步绑定完成之后，会将其唤醒
             safeSetSuccess(promise);
         }
 

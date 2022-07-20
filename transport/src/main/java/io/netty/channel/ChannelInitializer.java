@@ -50,6 +50,11 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @param <C>   A sub-type of {@link Channel}
  */
+
+/**
+ * 别名 ci
+ * @param <C>
+ */
 @Sharable
 public abstract class ChannelInitializer<C extends Channel> extends ChannelInboundHandlerAdapter {
 
@@ -104,11 +109,8 @@ public abstract class ChannelInitializer<C extends Channel> extends ChannelInbou
      */
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
-        if (ctx.channel().isRegistered()) {
-            // This should always be true with our current DefaultChannelPipeline implementation.
-            // The good thing about calling initChannel(...) in handlerAdded(...) is that there will be no ordering
-            // surprises if a ChannelInitializer will add another ChannelInitializer. This is as all handlers
-            // will be added in the expected order.
+        //判断ctx中的channel是否已经注册
+        if (ctx.channel().isRegistered()) {//已经注册
             if (initChannel(ctx)) {
 
                 // We are done with init the Channel, removing the initializer now.
@@ -122,6 +124,13 @@ public abstract class ChannelInitializer<C extends Channel> extends ChannelInbou
         initMap.remove(ctx);
     }
 
+    /**
+     * 拆包动作
+     * 执行initChannel(channel)方法，并将自己从pipeline中移除
+     * @param ctx
+     * @return
+     * @throws Exception
+     */
     @SuppressWarnings("unchecked")
     private boolean initChannel(ChannelHandlerContext ctx) throws Exception {
         if (initMap.add(ctx)) { // Guard against re-entrance.
@@ -134,6 +143,7 @@ public abstract class ChannelInitializer<C extends Channel> extends ChannelInbou
             } finally {
                 ChannelPipeline pipeline = ctx.pipeline();
                 if (pipeline.context(this) != null) {
+                    //将自己从pipeline中移除出去
                     pipeline.remove(this);
                 }
             }

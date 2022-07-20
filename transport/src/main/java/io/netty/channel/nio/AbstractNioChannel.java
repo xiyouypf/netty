@@ -376,11 +376,18 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         return loop instanceof NioEventLoop;
     }
 
+    /**
+     * 真正执行注册的方法
+     */
     @Override
     protected void doRegister() throws Exception {
         boolean selected = false;
         for (;;) {
             try {
+                //javaChannel() 返回JDK层面的Channel，可能是ServerSocketChannel，也可能是SocketChannel
+                //参数一：多路复用器 JDK层面的实现
+                //参数二：ops：当前感兴趣的事件，这里给的是0，后面会看到重写的逻辑
+                //参数三：att，附件，通过附件参数，可以拿到attr层面的对象，这里可能是NioServerSocketChannel，也可能是NioSocketChannel
                 selectionKey = javaChannel().register(eventLoop().unwrappedSelector(), 0, this);
                 return;
             } catch (CancelledKeyException e) {
@@ -415,6 +422,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
 
         final int interestOps = selectionKey.interestOps();
         if ((interestOps & readInterestOp) == 0) {
+            //会修改多路复用器上注册的事件
             selectionKey.interestOps(interestOps | readInterestOp);
         }
     }

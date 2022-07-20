@@ -16,42 +16,37 @@
 package io.netty.channel;
 
 /**
- * {@link ChannelHandler} which adds callbacks for state changes. This allows the user
- * to hook in to state changes easily.
+ * 对pipeline进行，从左到右添加处理器
  */
 public interface ChannelInboundHandler extends ChannelHandler {
 
     /**
-     * The {@link Channel} of the {@link ChannelHandlerContext} was registered with its {@link EventLoop}
+     * 当通道注册时，回调此方法
      */
     void channelRegistered(ChannelHandlerContext ctx) throws Exception;
 
     /**
-     * The {@link Channel} of the {@link ChannelHandlerContext} was unregistered from its {@link EventLoop}
+     * 当通道取消注册时，回调此方法
      */
     void channelUnregistered(ChannelHandlerContext ctx) throws Exception;
 
     /**
-     * The {@link Channel} of the {@link ChannelHandlerContext} is now active
+     * 通道激活时，回调此方法
      */
     void channelActive(ChannelHandlerContext ctx) throws Exception;
 
     /**
-     * The {@link Channel} of the {@link ChannelHandlerContext} was registered is now inactive and reached its
-     * end of lifetime.
+     * 通道处于未激活时，回调此方法
      */
     void channelInactive(ChannelHandlerContext ctx) throws Exception;
 
     /**
-     * Invoked when the current {@link Channel} has read a message from the peer.
+     * 当通道变为可读取时，回调此方法
      */
     void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception;
 
     /**
-     * Invoked when the last message read by the current read operation has been consumed by
-     * {@link #channelRead(ChannelHandlerContext, Object)}.  If {@link ChannelOption#AUTO_READ} is off, no further
-     * attempt to read an inbound data from the current {@link Channel} will be made until
-     * {@link ChannelHandlerContext#read()} is called.
+     * 通道读取完成时，回调此方法
      */
     void channelReadComplete(ChannelHandlerContext ctx) throws Exception;
 
