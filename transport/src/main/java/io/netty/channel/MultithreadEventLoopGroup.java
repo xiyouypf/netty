@@ -79,6 +79,9 @@ public abstract class MultithreadEventLoopGroup extends MultithreadEventExecutor
         return new DefaultThreadFactory(getClass(), Thread.MAX_PRIORITY);
     }
 
+    /**
+     * 从当前group内选择一个EventLoop对象返回
+     */
     @Override
     public EventLoop next() {
         return (EventLoop) super.next();

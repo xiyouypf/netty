@@ -69,11 +69,12 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
     protected AbstractChannel(Channel parent) {
         //保存通道对象
         this.parent = parent;
-        //创建ID
+        //每个Channel对象，创建一个ChannelId对象
         id = newId();
         //创建Unsafe类
+        //当类型是NioServerSocketChannel时，它的unsafe实例时NioMessageUnsafe
         unsafe = newUnsafe();
-        //创建ChannelPipeline对象
+        //创建当前channel内部的ChannelPipeline对象
         pipeline = newChannelPipeline();
     }
 
@@ -454,7 +455,10 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
         @Override
         public final void register(EventLoop eventLoop, final ChannelPromise promise) {
             ObjectUtil.checkNotNull(eventLoop, "eventLoop");
+            //防止channel重复注册
             if (isRegistered()) {
+                //1.设置promise的结果为失败
+                //2.回调监听者
                 promise.setFailure(new IllegalStateException("registered to an event loop already"));
                 return;
             }
@@ -464,6 +468,9 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 return;
             }
 
+            //AbstractChannel.this 获取到channel作用域，这个channel就是unsafe的外层对象
+            //AbstractChannel.this ==》NioServerSocketChannel对象
+            //绑定关系。。后续channel上的 事件或者任务 都会依赖当前EventLoop线程去处理
             AbstractChannel.this.eventLoop = eventLoop;
 
             // 判断当前线程是不是eventLoop自己的这个线程

@@ -139,7 +139,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
         // 获取到通道流水线对象
         ChannelPipeline p = channel.pipeline();
 
-        //获取到子事件循环器组
+        //获取到子事件循环器组,就是workerGroup
         final EventLoopGroup currentChildGroup = childGroup;
         //获取到子通道处理器对象
         final ChannelHandler currentChildHandler = childHandler;
@@ -151,6 +151,8 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
         }
         final Entry<AttributeKey<?>, Object>[] currentChildAttrs = childAttrs.entrySet().toArray(EMPTY_ATTRIBUTE_ARRAY);
 
+        //ChannelInitializer 本身不是一个handler，只是通过适配器实现了handler接口
+        //它存在的意思，就是为了延迟初始化pipeline。当pipeline的channel激活以后，真正添加handler逻辑才执行
         p.addLast(new ChannelInitializer<Channel>() {
             //初始化通道
             @Override

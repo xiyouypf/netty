@@ -277,6 +277,9 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
         return doBind(ObjectUtil.checkNotNull(localAddress, "localAddress"));
     }
 
+    /**
+     * 真正完成 bind 工作的方法，非常关键
+     */
     private ChannelFuture doBind(final SocketAddress localAddress) {
         //初始化并注册
         //regFuture：是注册相关的promise对象,实例为 DefaultChannelPromise
@@ -337,6 +340,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
             //创建一个新的通道对象
             channel = channelFactory.newChannel();
             //初始化通道
+            //服务端最重要的就是向pipeline中添加了ChannelInitializer
             init(channel);
         } catch (Throwable t) {
             if (channel != null) {
@@ -351,6 +355,9 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
 
         //注册通道
         //regFuture：是注册相关的promise对象,实例为 DefaultChannelPromise
+        //服务端config()返回的是ServerBootstrapConfig(ServerBootstrap)
+        //服务端的group()返回的是bossGroup，是NioEventLoopGroup
+        //服务端的register()最终是NioEventLoopGroup.register(channel)
         ChannelFuture regFuture = config().group().register(channel);
         //发生异常
         if (regFuture.cause() != null) {

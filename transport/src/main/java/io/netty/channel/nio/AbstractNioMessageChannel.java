@@ -40,6 +40,9 @@ public abstract class AbstractNioMessageChannel extends AbstractNioChannel {
      */
     protected AbstractNioMessageChannel(Channel parent, SelectableChannel ch, int readInterestOp) {
         //直接初始化父类
+        //参数一：null
+        //参数二：JDK层面的ServerSocketChannel
+        //参数三：关注的事件，这里是接收事件。当前服务端Channel最终会注册到Selector【多路复用器】，所以需要这个信息
         super(parent, ch, readInterestOp);
     }
 

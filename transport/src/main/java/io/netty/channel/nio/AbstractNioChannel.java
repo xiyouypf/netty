@@ -70,11 +70,10 @@ public abstract class AbstractNioChannel extends AbstractChannel {
     private SocketAddress requestedRemoteAddress;
 
     /**
-     * Create a new instance
-     *
-     * @param parent            the parent {@link Channel} by which this instance was created. May be {@code null}
-     * @param ch                the underlying {@link SelectableChannel} on which it operates
-     * @param readInterestOp    the ops to set to receive data from the {@link SelectableChannel}
+     * 服务端类型：
+     * 参数一：null
+     * 参数二：JDK层面的ServerSocketChannel
+     * 参数三：关注的事件，这里是接收事件。当前服务端Channel最终会注册到Selector【多路复用器】，所以需要这个信息
      */
     protected AbstractNioChannel(Channel parent, SelectableChannel ch, int readInterestOp) {
         //初始化父类
