@@ -466,10 +466,14 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
 
             AbstractChannel.this.eventLoop = eventLoop;
 
+            // 判断当前线程是不是eventLoop自己的这个线程
+            //这样设计的目的是 为了线程安全
+            //因为channel支持unregister。。。
             if (eventLoop.inEventLoop()) {
                 register0(promise);
             } else {
                 try {
+                    //将注册的任务提交到 eventLoop 工作队列内 带着promise过去的。。。异步任务1 名称：register0
                     eventLoop.execute(new Runnable() {
                         @Override
                         public void run() {

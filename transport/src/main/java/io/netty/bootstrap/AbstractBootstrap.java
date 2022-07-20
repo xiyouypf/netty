@@ -279,8 +279,10 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
 
     private ChannelFuture doBind(final SocketAddress localAddress) {
         //初始化并注册
+        //regFuture：是注册相关的promise对象,实例为 DefaultChannelPromise
+        //它关联的任务是register0这个任务，把它扔到当前channel相关的eventloop工作队列了
         final ChannelFuture regFuture = initAndRegister();
-        //获取到注册的通道
+        //获取到注册的通道，channel为NioServerSocketChannel对象
         final Channel channel = regFuture.channel();
         //如果发生了异常，则返回
         if (regFuture.cause() != null) {
@@ -288,6 +290,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
         }
 
         //初始化并注册完成
+        //当register0已经被执行完成后，regFuture 状态就是done
         if (regFuture.isDone()) {
             // At this point we know that the registration was complete and successful.
             ChannelPromise promise = channel.newPromise();
@@ -298,6 +301,8 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
             // Registration future is almost always fulfilled already, but just in case it's not.
             final PendingRegistrationPromise promise = new PendingRegistrationPromise(channel);
             //添加一个ChannelFuture监听器，也即Promise模式
+            //这里向 register0 任务相关的promise对象添加一个回调对象。回调对象去处理register0成功或失败的事情
+            //监听者回调线程是 eventLoop 线程。。而不是主线程
             regFuture.addListener(new ChannelFutureListener() {
                 @Override
                 public void operationComplete(ChannelFuture future) throws Exception {
@@ -318,10 +323,14 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
                     }
                 }
             });
+            // 主线程返回一个与bind操作相关的 promise对象
             return promise;
         }
     }
 
+    /**
+     * 初始化并注册channel
+     */
     final ChannelFuture initAndRegister() {
         Channel channel = null;
         try {
@@ -341,6 +350,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
         }
 
         //注册通道
+        //regFuture：是注册相关的promise对象,实例为 DefaultChannelPromise
         ChannelFuture regFuture = config().group().register(channel);
         //发生异常
         if (regFuture.cause() != null) {

@@ -114,6 +114,9 @@ public class DefaultChannelPromise extends DefaultPromise<Void> implements Chann
         return this;
     }
 
+    /**
+     * 会让主线程进入刮起状态，直到绑定操作完成后，才会被唤醒
+     */
     @Override
     public ChannelPromise sync() throws InterruptedException {
         super.sync();
