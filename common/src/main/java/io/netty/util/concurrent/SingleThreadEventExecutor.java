@@ -55,7 +55,9 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     private static final InternalLogger logger =
             InternalLoggerFactory.getInstance(SingleThreadEventExecutor.class);
 
+    //当前EventLoop线程 还没有启动
     private static final int ST_NOT_STARTED = 1;
+    //当前EventLoop线程 已经启动
     private static final int ST_STARTED = 2;
     private static final int ST_SHUTTING_DOWN = 3;
     private static final int ST_SHUTDOWN = 4;
@@ -279,14 +281,17 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         if (scheduledTaskQueue == null || scheduledTaskQueue.isEmpty()) {
             return true;
         }
+        //与系统相关的一个 当前时间
         long nanoTime = AbstractScheduledEventExecutor.nanoTime();
         for (;;) {
+            //根据当前时间，拿到一个需要调度的任务（队头任务），只有任务确实该执行时，才返回该任务
             Runnable scheduledTask = pollScheduledTask(nanoTime);
             if (scheduledTask == null) {
                 return true;
             }
+            //将调度任务加入到普通任务队列
             if (!taskQueue.offer(scheduledTask)) {
-                // No space left in the task queue add it back to the scheduledTaskQueue so we pick it up again.
+                //如果加入普通队列失败，则重新加入调度队列
                 scheduledTaskQueue.add((ScheduledFutureTask<?>) scheduledTask);
                 return false;
             }
@@ -369,15 +374,19 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
      */
     protected boolean runAllTasks() {
         assert inEventLoop();
+        // fetchedAll 表示需要被调度的任务 有没有转移完
         boolean fetchedAll;
         boolean ranAtLeastOne = false;
 
         do {
+            // 将调度任务队列中的 需要被调度的任务 转移到普通任务队列内，taskQueue内
             fetchedAll = fetchFromScheduledTaskQueue();
             if (runAllTasksFrom(taskQueue)) {
                 ranAtLeastOne = true;
             }
         } while (!fetchedAll); // keep on processing until we fetched all scheduled tasks.
+
+        //执行到这，需要调度的任务 和 普通任务 全部都执行完成了。。。
 
         if (ranAtLeastOne) {
             lastExecutionTime = ScheduledFutureTask.nanoTime();
@@ -454,10 +463,10 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     }
 
     /**
-     * Poll all tasks from the task queue and run them via {@link Runnable#run()} method.  This method stops running
-     * the tasks in the task queue and returns if it ran longer than {@code timeoutNanos}.
+     * timeoutNanos 表示执行任务 最多可用的时长
      */
     protected boolean runAllTasks(long timeoutNanos) {
+        //转移 需要被调度的任务 到 普通任务队列
         fetchFromScheduledTaskQueue();
         Runnable task = pollTask();
         if (task == null) {
@@ -465,16 +474,18 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
             return false;
         }
 
+        //deadline 表示执行任务的 截止时间，这是一个准确时间点
         final long deadline = timeoutNanos > 0 ? ScheduledFutureTask.nanoTime() + timeoutNanos : 0;
+        //已经执行的任务个数
         long runTasks = 0;
+        //最后一个任务执行时间的时间戳
         long lastExecutionTime;
         for (;;) {
             safeExecute(task);
 
             runTasks ++;
 
-            // Check timeout every 64 tasks because nanoTime() is relatively expensive.
-            // XXX: Hard-coded value - will make it configurable if it is really a problem.
+            //0x3F ->63 ->0b 111111，结论：每执行64个任务，这个条件就会成立一次
             if ((runTasks & 0x3F) == 0) {
                 lastExecutionTime = ScheduledFutureTask.nanoTime();
                 if (lastExecutionTime >= deadline) {
@@ -812,6 +823,9 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         return isTerminated();
     }
 
+    /**
+     * 向任务队列里面去提交本地任务
+     */
     @Override
     public void execute(Runnable task) {
         ObjectUtil.checkNotNull(task, "task");
@@ -828,6 +842,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         boolean inEventLoop = inEventLoop();
         //将任务添加到任务队列
         addTask(task);
+        //如果当前线程不是EventLoop的线程
         if (!inEventLoop) {
             startThread();
             if (isShutdown()) {
@@ -942,16 +957,18 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     private static final long SCHEDULE_PURGE_INTERVAL = TimeUnit.SECONDS.toNanos(1);
 
     private void startThread() {
-        //判断当前 NioEventLoop 状态是否为未启动状态
+        //判断当前 NioEventLoop 线程状态 是否为未启动状态
         if (state == ST_NOT_STARTED) {
-            //将当前 NioEventLoop 状态设置为已经启动的状态
+            //将当前 NioEventLoop 线程状态设置为已经启动的状态
             if (STATE_UPDATER.compareAndSet(this, ST_NOT_STARTED, ST_STARTED)) {
                 boolean success = false;
                 try {
                     doStartThread();
                     success = true;
                 } finally {
+                    //发生异常
                     if (!success) {
+                        //设置当前EventLoop线程状态为未启动状态
                         STATE_UPDATER.compareAndSet(this, ST_STARTED, ST_NOT_STARTED);
                     }
                 }
@@ -978,6 +995,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     }
 
     /**
+     * 使用executor提交了一个任务
      * 真正创建线程，并执行任务的方法
      */
     private void doStartThread() {
@@ -993,7 +1011,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
                 boolean success = false;
                 updateLastExecutionTime();
                 try {
-                    //执行的是NioEventLoop中的run方法
+                    //让新启动的线程，执行的是NioEventLoop中的run方法
                     SingleThreadEventExecutor.this.run();
                     success = true;
                 } catch (Throwable t) {

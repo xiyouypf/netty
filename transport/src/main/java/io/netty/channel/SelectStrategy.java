@@ -27,6 +27,7 @@ public interface SelectStrategy {
 
     /**
      * Indicates a blocking select should follow.
+     * 没有任务
      */
     int SELECT = -1;
     /**

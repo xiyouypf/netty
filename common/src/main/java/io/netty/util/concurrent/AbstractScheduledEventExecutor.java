@@ -54,6 +54,9 @@ public abstract class AbstractScheduledEventExecutor extends AbstractEventExecut
         super(parent);
     }
 
+    /**
+     * 与系统相关的一个 当前时间
+     */
     protected static long nanoTime() {
         return ScheduledFutureTask.nanoTime();
     }
@@ -120,8 +123,7 @@ public abstract class AbstractScheduledEventExecutor extends AbstractEventExecut
     }
 
     /**
-     * Return the {@link Runnable} which is ready to be executed with the given {@code nanoTime}.
-     * You should use {@link #nanoTime()} to retrieve the correct {@code nanoTime}.
+     * 根据nanoTime时间，拿到一个需要调度的任务
      */
     protected final Runnable pollScheduledTask(long nanoTime) {
         assert inEventLoop();
@@ -144,8 +146,7 @@ public abstract class AbstractScheduledEventExecutor extends AbstractEventExecut
     }
 
     /**
-     * Return the deadline (in nanoseconds) when the next scheduled task is ready to be run or {@code -1}
-     * if no task is scheduled.
+     * 拿到队头调度任务的执行截止时间
      */
     protected final long nextScheduledTaskDeadlineNanos() {
         ScheduledFutureTask<?> scheduledTask = peekScheduledTask();

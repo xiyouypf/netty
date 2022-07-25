@@ -25,6 +25,16 @@ final class DefaultSelectStrategy implements SelectStrategy {
 
     private DefaultSelectStrategy() { }
 
+    /**
+     * 参数一：selectNowSupplier
+     *     private final IntSupplier selectNowSupplier = new IntSupplier() {
+     *         @Override
+     *         public int get() throws Exception {
+     *             return selectNow();
+     *         }
+     *     };
+     * 参数二：hasTasks：是否有本地任务
+     */
     @Override
     public int calculateStrategy(IntSupplier selectSupplier, boolean hasTasks) throws Exception {
         return hasTasks ? selectSupplier.get() : SelectStrategy.SELECT;
