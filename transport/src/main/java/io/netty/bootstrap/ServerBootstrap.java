@@ -173,6 +173,11 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
                     @Override
                     public void run() {
                         //添加ServerBootstrapAcceptor对象到流水线中
+                        //参数一：ch，服务端Channel
+                        //参数二：currentChildGroup，worker线程组
+                        //参数三：currentChildHandler，模版代码中配置的 childHandler，其实就是一个 ChannelInitializer，这个CI用于初始化客户端pipeline
+                        //参数四：currentChildOptions
+                        //参数五：currentChildAttrs
                         pipeline.addLast(new ServerBootstrapAcceptor(
                                 ch, currentChildGroup, currentChildHandler, currentChildOptions, currentChildAttrs));
                     }
@@ -203,18 +208,18 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
         private final Runnable enableAutoReadTask;
 
         ServerBootstrapAcceptor(
-                final Channel channel, EventLoopGroup childGroup, ChannelHandler childHandler,
-                Entry<ChannelOption<?>, Object>[] childOptions, Entry<AttributeKey<?>, Object>[] childAttrs) {
+                //参数一：ch，服务端Channel
+                final Channel channel,
+                //参数二：currentChildGroup，worker线程组
+                EventLoopGroup childGroup,
+                //参数三：currentChildHandler，模版代码中配置的 childHandler，其实就是一个 ChannelInitializer，这个CI用于初始化客户端pipeline
+                ChannelHandler childHandler,
+                Entry<ChannelOption<?>, Object>[] childOptions,
+                Entry<AttributeKey<?>, Object>[] childAttrs) {
             this.childGroup = childGroup;
             this.childHandler = childHandler;
             this.childOptions = childOptions;
             this.childAttrs = childAttrs;
-
-            // Task which is scheduled to re-enable auto-read.
-            // It's important to create this Runnable before we try to submit it as otherwise the URLClassLoader may
-            // not be able to load the class because of the file limit it already reached.
-            //
-            // See https://github.com/netty/netty/issues/1328
             enableAutoReadTask = new Runnable() {
                 @Override
                 public void run() {
@@ -223,17 +228,31 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
             };
         }
 
+        /**
+         * 参数一：包装当前handler的ctx
+         * 参数二：msg，NioSocketChannel实例
+         */
         @Override
         @SuppressWarnings("unchecked")
         public void channelRead(ChannelHandlerContext ctx, Object msg) {
             final Channel child = (Channel) msg;
 
+            // child.pipeline() ==》 获取到客户端Channel的pipeline对象
+            // addLast(childHandler) ==》向客户端pipeline内添加一个CI，模版代码配置的
             child.pipeline().addLast(childHandler);
 
             setChannelOptions(child, childOptions, logger);
             setAttributes(child, childAttrs);
 
             try {
+                // childGroup，这个是Worker线程组
+                // childGroup.register(child) 客户端注册逻辑入口
+                //注册：
+                // 1。从Worker组内 分配一个 NioEventLoop给当前NioSocketChannel使用(ps:NioEventLoop是多个Channel共享的)
+                // 2。完成底层 SocketChannel 注册到底层多路复用器
+                // 3。向NioSocketChannel pipeline发起Active事件，这个事件由head响应，
+                // head最终通过调用unsafe修改当前Channel的SelectionKey感兴趣的事件 包含：read。
+                // 代表selector帮当前Channel监听 读 事件
                 childGroup.register(child).addListener(new ChannelFutureListener() {
                     @Override
                     public void operationComplete(ChannelFuture future) throws Exception {

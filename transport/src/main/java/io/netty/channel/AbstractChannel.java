@@ -526,7 +526,9 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 //向当前channel的pipeline发起注册完成事件，关注的Handler可以做一些事情
                 pipeline.fireChannelRegistered();
                 //绑定操作一定是当前EventLoop线程去做的，在这一步，绑定一定是没有完成的
+                //这一步：服务端isActive()是不成立的
                 if (isActive()) {
+                    // 客户端 会进来这里！服务端Channel不会走这里
                     if (firstRegistration) {
                         pipeline.fireChannelActive();
                     } else if (config().isAutoRead()) {

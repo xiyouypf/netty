@@ -66,8 +66,11 @@ public abstract class AbstractNioMessageChannel extends AbstractNioChannel {
         @Override
         public void read() {
             assert eventLoop().inEventLoop();
+            // 服务端Config对象
             final ChannelConfig config = config();
+            // 服务端pipeline
             final ChannelPipeline pipeline = pipeline();
+            // 控制读循环，以及预测下次创建的ByteBuf容量大小
             final RecvByteBufAllocator.Handle allocHandle = unsafe().recvBufAllocHandle();
             allocHandle.reset(config);
 
@@ -75,29 +78,38 @@ public abstract class AbstractNioMessageChannel extends AbstractNioChannel {
             Throwable exception = null;
             try {
                 try {
+                    // do...while 读消息循环。。。
                     do {
+                        //正常情况下，localRead = 1
                         int localRead = doReadMessages(readBuf);
                         if (localRead == 0) {
                             break;
                         }
+                        //条件成立：说明当前服务器处于关闭状态
                         if (localRead < 0) {
                             closed = true;
                             break;
                         }
-
+                        //更新已读消息数量
                         allocHandle.incMessagesRead(localRead);
                     } while (allocHandle.continueReading());
                 } catch (Throwable t) {
                     exception = t;
                 }
 
+                // 执行到这里，readbuf 全部都是客户端Channel对象
+
                 int size = readBuf.size();
                 for (int i = 0; i < size; i ++) {
                     readPending = false;
+                    // 向服务端通道 传播 每个客户端Channel对象
                     pipeline.fireChannelRead(readBuf.get(i));
                 }
+                //清空readBuf
                 readBuf.clear();
                 allocHandle.readComplete();
+                // 重新设置 selector 上当前 server key，让key包含包含accept，
+                // 就是让 selector 继续帮Server继续帮Server监听accept类型事件
                 pipeline.fireChannelReadComplete();
 
                 if (exception != null) {

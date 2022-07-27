@@ -1128,6 +1128,10 @@ public abstract class AbstractByteBuf extends ByteBuf {
         return writtenBytes;
     }
 
+    /**
+     * 参数一：JDK层面的SocketChannel实例
+     * 参数二：length，想要读取的数据量
+     */
     @Override
     public int writeBytes(ScatteringByteChannel in, int length) throws IOException {
         ensureWritable(length);

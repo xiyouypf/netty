@@ -144,18 +144,26 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
         javaChannel().close();
     }
 
+    /**
+     * 获取连接到服务器的 客户端SocketChannel对象，
+     * 将其封装为 Netty层面的 客户端NioSocketChannel加入到buf集合中
+     */
     @Override
     protected int doReadMessages(List<Object> buf) throws Exception {
+        //参数：JDK层面的ServerSocketChannel
+        //内部通过 ServerSocketChannel.accept() 获取到 客户端SocketChannel对象。
         SocketChannel ch = SocketUtils.accept(javaChannel());
 
         try {
             if (ch != null) {
+                //参数一：NioServerSocketChannel
+                //参数二：原生SocketChannel
+                //包装成为 Netty层面的 客户端 Channel
                 buf.add(new NioSocketChannel(this, ch));
                 return 1;
             }
         } catch (Throwable t) {
             logger.warn("Failed to create a new channel from an accepted socket.", t);
-
             try {
                 ch.close();
             } catch (Throwable t2) {

@@ -96,10 +96,9 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
     }
 
     /**
-     * Create a new instance
-     *
-     * @param parent    the {@link Channel} which created this instance or {@code null} if it was created by the user
-     * @param socket    the {@link SocketChannel} which will be used
+     * 封装一个netty层面的NioSocketChannel对象
+     * 参数一：NioServerSocketChannel
+     * 参数二：原生SocketChannel
      */
     public NioSocketChannel(Channel parent, SocketChannel socket) {
         super(parent, socket);
@@ -343,10 +342,17 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
         javaChannel().close();
     }
 
+    /**
+     * 读取当前Socket读缓冲区的数据到ByteBuf对象。
+     * 返回真实从SocketChannel内读取的数据量
+     */
     @Override
     protected int doReadBytes(ByteBuf byteBuf) throws Exception {
         final RecvByteBufAllocator.Handle allocHandle = unsafe().recvBufAllocHandle();
         allocHandle.attemptedBytesRead(byteBuf.writableBytes());
+        //参数一：JDK层面的SocketChannel实例
+        //参数二：length，想要读取的数据量
+        // 返回真实从SocketChannel内读取的数据量
         return byteBuf.writeBytes(javaChannel(), allocHandle.attemptedBytesRead());
     }
 

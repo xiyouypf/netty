@@ -89,6 +89,7 @@ public abstract class SingleThreadEventLoop extends SingleThreadEventExecutor im
 
     @Override
     public ChannelFuture register(Channel channel) {
+        // new DefaultChannelPromise(channel, this)类似于Future的东西，支持添加监听者，当关联的事件完成后，会主动回调监听者。
         return register(new DefaultChannelPromise(channel, this));
     }
 
@@ -99,6 +100,13 @@ public abstract class SingleThreadEventLoop extends SingleThreadEventExecutor im
         //promise.channel()：NioServerSocketChannel 实例
         //NioServerSocketChannel.unsafe() 返回的是NioMessageUnsafe
         //NioMessageUnsafe.unsafe方法
+        //参数一：NioEventLoop 单线程 线程池
+        //参数二：promise 结果封装。。外部可以注册监听，进行异步操作
+
+        // 客户端：
+        //promise.channel()：NioSocketChannel 实例
+        //NioSocketChannel.unsafe() 返回的是NioByteUnsafe
+        //NioByteUnsafe.unsafe方法
         //参数一：NioEventLoop 单线程 线程池
         //参数二：promise 结果封装。。外部可以注册监听，进行异步操作
         promise.channel().unsafe().register(this, promise);
