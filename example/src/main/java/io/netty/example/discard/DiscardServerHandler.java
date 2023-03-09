@@ -27,6 +27,7 @@ public class DiscardServerHandler extends SimpleChannelInboundHandler<Object> {
     @Override
     public void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
         // discard
+        System.out.println("*********discard********");
     }
 
     //发生异常时，回调此方法
