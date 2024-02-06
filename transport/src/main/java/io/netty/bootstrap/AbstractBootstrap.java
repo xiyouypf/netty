@@ -125,7 +125,8 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
 
         //保存Channel工厂对象
         this.channelFactory = channelFactory;
-        return self();
+        return (B) this;
+//        return self();
     }
 
     /**
@@ -135,10 +136,10 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
      * has a no-args constructor, its highly recommend to just use {@link #channel(Class)} to
      * simplify your code.
      */
-    @SuppressWarnings({ "unchecked", "deprecation" })
-    public B channelFactory(io.netty.channel.ChannelFactory<? extends C> channelFactory) {
-        return channelFactory((ChannelFactory<C>) channelFactory);
-    }
+//    @SuppressWarnings({ "unchecked", "deprecation" })
+//    public B channelFactory(io.netty.channel.ChannelFactory<? extends C> channelFactory) {
+//        return channelFactory((ChannelFactory<C>) channelFactory);
+//    }
 
     /**
      * The {@link SocketAddress} which is used to bind the local "end" to.
@@ -214,7 +215,8 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
         if (channelFactory == null) {
             throw new IllegalStateException("channel or channelFactory not set");
         }
-        return self();
+        return (B) this;
+//        return self();
     }
 
     /**
@@ -406,7 +408,8 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
     public B handler(ChannelHandler handler) {
         //判空并初始化 handler 对象
         this.handler = ObjectUtil.checkNotNull(handler, "handler");
-        return self();
+        return (B) this;
+//        return self();
     }
 
     /**

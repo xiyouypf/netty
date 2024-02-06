@@ -29,6 +29,8 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
 
+import java.nio.channels.ServerSocketChannel;
+
 /**
  * Discards any incoming data.
  */
@@ -50,7 +52,7 @@ public final class DiscardServer {
         }
 
         //创建主（boss）事件循环组
-        EventLoopGroup bossGroup = new NioEventLoopGroup(1);
+        EventLoopGroup bossGroup = new NioEventLoopGroup(2);
         //创建从（worker）事件循环组
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {

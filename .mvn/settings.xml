@@ -1,9 +1,60 @@
-<settings>
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 https://maven.apache.org/xsd/settings-1.2.0.xsd">
   <servers>
     <server>
-      <id>sonatype-nexus-snapshots</id>
-      <username>${env.SANOTYPE_USER}</username>
-      <password>${env.SANOTYPE_PASSWORD}</password>
+      <id>releases</id>
+      <username>admin</username>
+      <password>admin123</password>
+    </server>
+    <server>
+      <id>snapshots</id>
+      <username>admin</username>
+      <password>admin123</password>
     </server>
   </servers>
+  <mirrors>
+<!--    <mirror>-->
+<!--      <id>snapshots</id>-->
+<!--      <name>Snapshots</name>-->
+<!--      <mirrorOf>central</mirrorOf>-->
+<!--      <url>http://8.130.72.252:8081/nexus/content/repositories/snapshots/</url>-->
+<!--    </mirror>-->
+<!--    <mirror>-->
+<!--      <id>releases</id>-->
+<!--      <name>Releases</name>-->
+<!--      <mirrorOf>central</mirrorOf>-->
+<!--      <url>http://8.130.72.252:8081/nexus/content/repositories/releases/</url>-->
+<!--    </mirror>-->
+    <mirror>
+      <id>central</id>
+      <name>Central</name>
+      <mirrorOf>central</mirrorOf>
+      <url>http://8.130.72.252:8081/nexus/content/repositories/central/</url>
+    </mirror>
+    <mirror>
+      <id>public</id>
+      <name>Public</name>
+      <mirrorOf>*</mirrorOf>
+      <url>http://8.130.72.252:8081/nexus/content/groups/public/</url>
+    </mirror>
+  </mirrors>
+  <profiles>
+    <profile>
+      <id>jdk-1.8</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+        <jdk>1.8</jdk>
+      </activation>
+      <properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.compilerVersion>1.8</maven.compiler.compilerVersion>
+      </properties>
+    </profile>
+  </profiles>
+  <activeProfiles>
+    <activeProfile>jdk-1.8</activeProfile>
+  </activeProfiles>
 </settings>
